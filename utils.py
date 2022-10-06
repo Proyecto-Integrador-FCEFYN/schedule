@@ -3,9 +3,14 @@ import os
 import threading
 import time
 import schedule
-from ImageToVideo import DatabaseConnection
+from db import DatabaseConnection
 from datetime import datetime as dt
 from dateutil.relativedelta import relativedelta
+
+
+mongo_url = os.getenv('MONGO_URL', "mongodb://roberto:sanchez@150.136.250.71:27017/")
+files_db = os.getenv('FILES_DB', "djongo")
+event_db = os.getenv('EVENT_DB', "djongo")
 
 
 def run_threaded(job_func):
@@ -40,11 +45,21 @@ class Schedule:
 
         for collection in list_of_collections:
             self.db.delete_events_duration(collection=collection, duration=duration)
+        self.db.delete_files_duration(duration=duration)
 
     def __run(self):
         days = os.getenv('CHECK_OLD_EVENT_DAYS', 15)
-        schedule.every(days).days.do(run_threaded, self.__job)
+        # schedule.every(days).days.do(run_threaded, self.__job)
         schedule.every(1).minute.do(run_threaded, self.__job())
         while 1:
             schedule.run_pending()
-            time.sleep(3600)
+            time.sleep(1)
+
+
+def main():
+    db = DatabaseConnection(conn_string=mongo_url, event_db=event_db, files_db=files_db)
+    Schedule(collection='events_eventsduration', db=db)
+
+
+if __name__ == "__main__":
+    main()
