@@ -163,7 +163,9 @@ class DatabaseConnection:
         db = self.client[self.files_db]
         fs = gridfs.GridFS(db)
 
-        cursor = fs.find({'uploadDate': {'$lt': duration}})
+        cursor = fs.find({'uploadDate': {'$lt': duration},
+                          'filename': {'$not': {'$regex': 'pem$'}}  # No borrar los certificados
+                          })
         for file in cursor:
             print(f"File {file._id} being deleted!")
             fs.delete(file_id=file._id)
